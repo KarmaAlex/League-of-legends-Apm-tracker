@@ -403,6 +403,7 @@ def check_in_game():
                 count_time = False
                 check = False
                 run = False
+            sleep(1)
         sleep(1)
 #Checks the current champion the user is playing to display at the top of the window
 def check_champ():
