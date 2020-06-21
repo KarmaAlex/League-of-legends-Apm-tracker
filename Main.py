@@ -9,6 +9,7 @@ import urllib3
 from time import sleep, perf_counter
 #Required to run multiple threads so that they don't overlap in execution time
 import threading
+from multiprocessing import freeze_support
 #The get request from the client returns a json object so this is needed to parse it
 import json
 #Required to check the current foreground window
@@ -381,7 +382,7 @@ def check_if_won():
                 count_time = False
         #This sleep instruction may or may not improve performance but lowers the consistency, although with .5 I haven't encountered any issues
         sleep(0.5)
-
+#Check if the player is in-game
 def check_in_game():
     global run, check, count_time, t
     while True:
@@ -428,33 +429,23 @@ def check_champ():
             except(requests.exceptions.ConnectionError):
                 pass
         sleep(1)
-#These are required because after packaging the code with pyinstaller they prevent some stutters in the mouse listener
-def on_move(x,y):
-    pass
-def on_scroll(x,y,z,w):
-    pass
 #Listeners used to check for mouse and keyboard input
-def mouse_listen():
-    with keyboard.Listener(on_press=on_press_kb,on_release=on_release_kb) as listener_kb:
-        listener_kb.join()
-def kb_listen():
-    with mouse.Listener(on_click=on_click,on_move=on_move,on_scroll=on_scroll) as listener_m2:
-        listener_m2.join()
+listener_kb = keyboard.Listener(on_press=on_press_kb,on_release=on_release_kb)
+listener_kb.start()
+listener_mouse = mouse.Listener(on_click=on_click)
+listener_mouse.start()
 #This if statement may or may not be required but I'm keeping it for safety
 if __name__ == "__main__":
     #Starts the required threads
+    freeze_support()
     process1 = threading.Thread(target=check_in_game,daemon=True)
     process1.start()
-    process2 = threading.Thread(target=mouse_listen,daemon=True)
+    process2 = threading.Thread(target=check_if_won,daemon=True)
     process2.start()
-    process3 = threading.Thread(target=kb_listen,daemon=True)
+    process3 = threading.Thread(target=timer,daemon=True)
     process3.start()
-    process4 = threading.Thread(target=check_if_won,daemon=True)
+    process4 = threading.Thread(target=check_champ,daemon=True)
     process4.start()
-    process5 = threading.Thread(target=timer,daemon=True)
-    process5.start()
-    process6 = threading.Thread(target=check_champ,daemon=True)
-    process6.start()
     #These 2 functions tell the 2 UI windows to update respectively every 50ms and every second
     time.repeat(50,update)
     prev_time.repeat(1000,update_last)
